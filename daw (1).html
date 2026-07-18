@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎶 ポップ・ミュージック・シーケンサー 🎶</title>
+    <style>
+        /* 全体のポップなデザイン */
+        body {
+            background-color: #f0f8ff; /* 爽やかな空色ベース */
+            font-family: 'Hiragino Maru Gothic ProN', 'Comic Sans MS', sans-serif;
+            text-align: center;
+            color: #444;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #ff9a9e;
+            font-size: 2.2rem;
+            text-shadow: 2px 2px 0px #fff, 4px 4px 0px #fecfef;
+            margin-bottom: 5px;
+        }
+        p.desc {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        /* BPM（スピード）ボタンのスタイル */
+        .bpm-container {
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 25px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+        .bpm-btn {
+            background-color: #f8f9fa;
+            border: 3px solid #e9ecef;
+            border-radius: 15px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .bpm-btn:hover {
+            transform: scale(1.05);
+        }
+        .bpm-btn.active {
+            background-color: #fff0f5;
+            border-color: #ffb6c1;
+            color: #d65a5a;
+        }
+
+        /* トラックを横に並べるエリア */
+        .tracks-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 2つのトラックを並べる行 */
+        .track-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        /* 順番を示す矢印 */
+        .arrow {
+            font-size: 2rem;
+            color: #a0c4ff;
+            font-weight: bold;
+        }
+
+        /* 下の段へ行く矢印 */
+        .arrow-turn {
+            font-size: 1.5rem;
+            color: #a0c4ff;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        /* 個別のトラックスタイル */
+        .track {
+            width: 180px;
+            background: #fff;
+            border-radius: 25px;
+            padding: 20px 15px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            border: 4px solid transparent;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+        }
+        /* トラックごとのテーマカラー */
+        .track-1 { border-color: #ffadad; background-color: #fff0f0; }
+        .track-2 { border-color: #ffd6a5; background-color: #fff8f0; }
+        .track-3 { border-color: #fdffb6; background-color: #fffff0; }
+        .track-4 { border-color: #caffbf; background-color: #f0fff0; }
+        
+        /* ★ 再生中のピカピカ光るアニメーション ★ */
+        .track.playing {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 25px rgba(0,0,0,0.15);
+        }
+        .track-1.playing { box-shadow: 0 0 20px #ffadad; }
+        .track-2.playing { box-shadow: 0 0 20px #ffd6a5; }
+        .track-3.playing { box-shadow: 0 0 20px #fdffb6; }
+        .track-4.playing { box-shadow: 0 0 20px #caffbf; }
+
+        .track h2 {
+            font-size: 1.3rem;
+            margin: 0 0 15px 0;
+        }
+        
+        /* ファイル入力ボタンのデザイン */
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .btn-upload {
+            background: #a0c4ff;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #84a9e6;
+        }
+        .btn-upload:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            height: 100%;
+        }
+        .status {
+            font-weight: bold;
+            color: #999;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            min-height: 1.2em;
+        }
+
+        /* 再生・停止ボタン */
+        .play-controls {
+            margin-top: 20px;
+            padding-bottom: 40px;
+        }
+        .btn-play, .btn-stop {
+            font-size: 1.6rem;
+            padding: 15px 35px;
+            border: none;
+            border-radius: 35px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 10px;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+            transition: 0.1s;
+            font-family: inherit;
+        }
+        .btn-play { background-color: #ff9a9e; }
+        .btn-play:active { transform: translateY(6px); box-shadow: none; }
+        .btn-stop { background-color: #b0b0b0; display: none; }
+        .btn-stop:active { transform: translateY(6px); box-shadow: none; }
+
+        /* スマホ向け調整 */
+        @media (max-width: 768px) {
+            .arrow, .arrow-turn { display: none; } /* スマホでは矢印を隠す */
+            .track-row { flex-direction: column; gap: 10px; width: 100%; align-items: center;}
+            .track { width: 80%; margin-bottom: 0px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎶 じゅんばんシーケンサー 🎶</h1>
+    <p class="desc">左から右へ、じゅんばんに音が流れるよ！曲をかんせいさせよう！</p>
+
+    <!-- テンポ（BPM）選択エリア -->
+    <div class="bpm-container">
+        <p style="margin: 0 0 10px 0; font-weight: bold; color: #888;">🎵 曲のスピード</p>
+        <button class="bpm-btn" onclick="setBpm(80, this)">おそい<br><small>(80)</small></button>
+        <button class="bpm-btn" onclick="setBpm(100, this)">すこしおそい<br><small>(100)</small></button>
+        <button class="bpm-btn active" onclick="setBpm(120, this)">ふつう<br><small>(120)</small></button>
+        <button class="bpm-btn" onclick="setBpm(140, this)">すこしはやい<br><small>(140)</small></button>
+        <button class="bpm-btn" onclick="setBpm(160, this)">はやい<br><small>(160)</small></button>
+    </div>
+
+    <!-- トラックを並べるエリア（矢印で順番を表現） -->
+    <div class="tracks-wrapper">
+        <!-- 上の段 (おと1 ➡️ おと2) -->
+        <div class="track-row">
+            <div class="track track-1" id="track-0">
+                <h2>1️⃣ おと 1</h2>
+                <div class="file-input-wrapper">
+                    <div class="btn-upload">ファイルをいれる</div>
+                    <input type="file" id="file0" accept=".wav,.mp3">
+                </div>
+                <div class="status" id="status0">おとをいれてね</div>
+            </div>
+            
+            <div class="arrow">➡️</div>
+
+            <div class="track track-2" id="track-1">
+                <h2>2️⃣ おと 2</h2>
+                <div class="file-input-wrapper">
+                    <div class="btn-upload">ファイルをいれる</div>
+                    <input type="file" id="file1" accept=".wav,.mp3">
+                </div>
+                <div class="status" id="status1">おとをいれてね</div>
+            </div>
+        </div>
+
+        <!-- 次の段へ -->
+        <div class="arrow-turn">⬇️ つぎへ ⬇️</div>
+
+        <!-- 下の段 (おと3 ➡️ おと4) -->
+        <div class="track-row">
+            <div class="track track-3" id="track-2">
+                <h2>3️⃣ おと 3</h2>
+                <div class="file-input-wrapper">
+                    <div class="btn-upload">ファイルをいれる</div>
+                    <input type="file" id="file2" accept=".wav,.mp3">
+                </div>
+                <div class="status" id="status2">おとをいれてね</div>
+            </div>
+            
+            <div class="arrow">➡️</div>
+
+            <div class="track track-4" id="track-3">
+                <h2>4️⃣ おと 4</h2>
+                <div class="file-input-wrapper">
+                    <div class="btn-upload">ファイルをいれる</div>
+                    <input type="file" id="file3" accept=".wav,.mp3">
+                </div>
+                <div class="status" id="status3">おとをいれてね</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 再生コントロール -->
+    <div class="play-controls">
+        <button class="btn-play" id="btnPlay" onclick="startSequence()">▶️ きいてみる！</button>
+        <button class="btn-stop" id="btnStop" onclick="stopSequence()">⏹️ ストップ</button>
+    </div>
+
+    <script>
+        // Web Audio APIの準備
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        
+        // 音声データ（バッファ）を保存する配列
+        let buffers = [null, null, null, null];
+        let currentBpm = 120;
+        let isPlaying = false;
+
+        // シーケンサー（順番再生）のための変数
+        let nextNoteTime = 0.0;    // 次の音が鳴る時間
+        let currentTrack = 0;      // 次に鳴らすトラック番号
+        let timerID;               // スケジューラーのタイマーID
+        let lookahead = 25.0;      // タイマーの呼び出し間隔 (ミリ秒)
+        let scheduleAheadTime = 0.1; // どのくらい未来までスケジュールするか (秒)
+        
+        let playingSources = [];   // 再生中・予約中の音源を管理（ストップ時に使う）
+        let highlightTimers = [];  // UIを光らせるタイマーを管理
+
+        // オーディオコンテキストの初期化
+        function initAudioCtx() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        // ファイルが選ばれたときの読み込み処理
+        async function handleFile(file, index) {
+            initAudioCtx();
+            const statusText = document.getElementById('status' + index);
+            statusText.innerText = "⏳ よみこみ中...";
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                buffers[index] = audioBuffer;
+                statusText.innerText = "🌟 じゅんびOK！";
+                statusText.style.color = "#ff9a9e";
+            } catch (e) {
+                statusText.innerText = "❌ エラー！";
+                statusText.style.color = "red";
+            }
+        }
+
+        // 4つのファイル入力を監視
+        for(let i=0; i<4; i++) {
+            document.getElementById('file' + i).addEventListener('change', function(e) {
+                if(e.target.files[0]) {
+                    handleFile(e.target.files[0], i);
+                }
+            });
+        }
+
+        // BPM（スピード）の変更処理
+        function setBpm(bpm, btnElement) {
+            document.querySelectorAll('.bpm-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            currentBpm = bpm;
+            let rate = currentBpm / 120;
+
+            // すでに再生中・予約済みの音源のスピードもリアルタイムに変更する
+            if (audioCtx && isPlaying) {
+                let now = audioCtx.currentTime;
+                playingSources.forEach(item => {
+                    // プツッとならないように滑らかに速度変更
+                    item.source.playbackRate.setTargetAtTime(rate, now, 0.1);
+                });
+            }
+        }
+
+        // ★シーケンサーのメインループ★
+        function scheduler() {
+            // 現在の時間から 0.1秒（scheduleAheadTime）未来までに鳴らすべき音があればスケジュールする
+            while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+                scheduleNote(currentTrack, nextNoteTime);
+                advanceNote(); // 次の音の時間を計算
+            }
+            // 25ミリ秒後にまたチェックする
+            timerID = setTimeout(scheduler, lookahead);
+        }
+
+        // 次の音の時間を計算し、次に鳴らすトラックを決める処理
+        function advanceNote() {
+            let buffer = buffers[currentTrack];
+            let rate = currentBpm / 120;
+            
+            // ファイルの長さをBPMに合わせて計算
+            let advanceTime = 0;
+            if (buffer) {
+                advanceTime = buffer.duration / rate;
+            } else {
+                advanceTime = 0.5; // ファイルがない場合は0.5秒待つ（安全対策）
+            }
+
+            // 次の音が鳴る時間を更新（隙間なく繋ぐ）
+            nextNoteTime += advanceTime;
+
+            // 次にファイルが入っているトラックを探す
+            let startIndex = currentTrack;
+            do {
+                currentTrack = (currentTrack + 1) % 4; // 0,1,2,3をループ
+                if (buffers[currentTrack]) break;      // ファイルがあれば決定
+            } while (currentTrack !== startIndex);
+        }
+
+        // 指定した時間に音を鳴らす予約をする処理
+        function scheduleNote(trackNumber, time) {
+            let buffer = buffers[trackNumber];
+            if (!buffer) return;
+            
+            let source = audioCtx.createBufferSource();
+            let gain = audioCtx.createGain();
+            
+            source.buffer = buffer;
+            let rate = currentBpm / 120;
+            source.playbackRate.value = rate;
+            
+            let actualDuration = buffer.duration / rate;
+
+            // ★つなぎ目をナチュラルにする工夫★
+            // 音の出だしと終わりに「0.02秒（20ミリ秒）」だけフェードをかけ、
+            // リズムを崩さずに「プツッ」というノイズだけを消します。
+            gain.gain.setValueAtTime(0, time);
+            gain.gain.linearRampToValueAtTime(1, time + 0.02); // フェードイン
+            
+            gain.gain.setValueAtTime(1, time + actualDuration - 0.02);
+            gain.gain.linearRampToValueAtTime(0, time + actualDuration); // フェードアウト
+            
+            source.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            source.start(time);
+            source.stop(time + actualDuration);
+            
+            // ストップボタンで止められるようにリストに追加
+            playingSources.push({source: source, gain: gain});
+
+            // 不要になったソースをリストから消す（メモリ節約）
+            source.onended = () => {
+                playingSources = playingSources.filter(item => item.source !== source);
+            };
+
+            // ★UIをピカピカ光らせるアニメーションの予約★
+            let delayToStart = (time - audioCtx.currentTime) * 1000;
+            if (delayToStart < 0) delayToStart = 0;
+
+            let hTimerOn = setTimeout(() => {
+                if(!isPlaying) return;
+                // 一度すべての光を消す
+                document.querySelectorAll('.track').forEach(t => t.classList.remove('playing'));
+                // 今鳴るトラックだけを光らせる
+                document.getElementById('track-' + trackNumber).classList.add('playing');
+            }, delayToStart);
+
+            let hTimerOff = setTimeout(() => {
+                if(!isPlaying) return;
+                document.getElementById('track-' + trackNumber).classList.remove('playing');
+            }, delayToStart + (actualDuration * 1000));
+
+            highlightTimers.push(hTimerOn, hTimerOff);
+        }
+
+        // 再生ボタンを押したとき
+        function startSequence() {
+            initAudioCtx();
+            if (isPlaying) stopSequence();
+
+            // 1つでもファイルが入っているか確認
+            let hasFile = buffers.some(b => b !== null);
+            if (!hasFile) {
+                alert("まずはどれかのトラックに「おと」をいれてね！");
+                return;
+            }
+
+            isPlaying = true;
+            document.getElementById('btnPlay').style.display = 'none';
+            document.getElementById('btnStop').style.display = 'inline-block';
+
+            // 最初にファイルが入っているトラックを探す
+            currentTrack = 0;
+            while (!buffers[currentTrack] && currentTrack < 4) {
+                currentTrack++;
+            }
+
+            // 今から0.1秒後に最初の音を鳴らし始める
+            nextNoteTime = audioCtx.currentTime + 0.1;
+            scheduler(); // シーケンサー発進！
+        }
+
+        // ストップボタンを押したとき
+        function stopSequence() {
+            isPlaying = false;
+            clearTimeout(timerID); // シーケンサーを止める
+
+            // 光るアニメーションのタイマーを全部消す
+            highlightTimers.forEach(id => clearTimeout(id));
+            highlightTimers = [];
+            document.querySelectorAll('.track').forEach(t => t.classList.remove('playing'));
+
+            // 今鳴っている・予約されている音をフェードアウトさせて止める
+            let now = audioCtx.currentTime;
+            playingSources.forEach(item => {
+                try {
+                    item.gain.gain.setValueAtTime(item.gain.gain.value, now);
+                    item.gain.gain.linearRampToValueAtTime(0, now + 0.05); // 0.05秒でスッと消す
+                    item.source.stop(now + 0.05);
+                } catch(e) {}
+            });
+            playingSources = [];
+
+            document.getElementById('btnPlay').style.display = 'inline-block';
+            document.getElementById('btnStop').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
